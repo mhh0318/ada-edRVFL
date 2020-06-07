@@ -1,9 +1,11 @@
 import numpy as np
 import time
+import numpy.matlib
 from function import *
 from l2_weights import *
 from majorityVoting import *
 from model import model as mod
+from scipy.special import xlogy
 
 
 def MRVFLtrain(trainX,trainY,option):
@@ -21,10 +23,12 @@ def MRVFLtrain(trainX,trainY,option):
     biases = []
     mu = []
     sigma = []
+    samm_prob = []
 
 
     A_input= trainX
-
+    n_classes = trainY.shape[1]
+    trainY_num = np.argmax(trainY, axis=1).ravel()
 
     time_start=time.time()
     ada_weights = np.ones((L,n_sample))
@@ -55,7 +59,7 @@ def MRVFLtrain(trainX,trainY,option):
         A_ = A_ + np.repeat(b, n_sample, 0)
         # A_ = relu(A_)
         A_ = selu(A_)
-        # trainX *= ada_weight * n_sample
+        trainX *= ada_weight * n_sample
         A_tmp = np.concatenate([trainX,A_,np.ones((n_sample,1))],axis=1)
         beta_=l2_weights(A_tmp,trainY,C,n_sample)
 
@@ -65,11 +69,9 @@ def MRVFLtrain(trainX,trainY,option):
         #clear A_ A_tmp A1_temp2 beta_
 
         trainY_temp=np.matmul(A_tmp,beta_)
-        n_classes = trainY.shape[1]
         prob = np.expand_dims(softmax(trainY_temp), axis=1)
         pred_num = np.argmax(prob,axis=2).ravel()
         pred_oh = np.zeros((pred_num.size,n_classes))
-        trainY_num = np.argmax(trainY,axis=1).ravel()
         mask = np.array(pred_num!=trainY_num)[:,np.newaxis]
         err =np.sum(ada_weight*mask) / np.sum(ada_weight)
         classifier_weight = np.log((1-err)/err)+np.log(n_classes-1)
@@ -84,20 +86,23 @@ def MRVFLtrain(trainX,trainY,option):
         pred_oh[range(n_sample),pred_num] = classifier_weight
         pred_idx.append(pred_oh)
 
-        trainX *= ada_weight*n_sample
+        # trainX *= ada_weight*n_sample
         A_input = np.concatenate([trainX, A_], axis=1)
 
 
     #pred = sum(samm_prob) / L
+    pred = np.zeros((L,n_sample,n_classes))
     pred_idx = np.array(pred_idx)
-    pred = np.argmax(pred_idx.sum(axis=0),axis=1)
+    for i in range(1,L+1):
+        pred[i-1] = pred_idx[:i].sum(axis=0)
+    predictions = np.argmax(pred,axis=2)
     time_end = time.time()
     Training_time = time_end-time_start
 
 
     ## Calculate the training accuracy
 
-    TrainingAccuracy = np.sum(pred== np.argmax(trainY,axis=1).ravel())/n_sample
+    TrainingAccuracy = np.sum(predictions==trainY_num,axis=1)/n_sample
 
 
 
