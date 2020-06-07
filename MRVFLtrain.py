@@ -61,7 +61,7 @@ def MRVFLtrain(trainX,trainY,option):
         A_ = selu(A_)
         # trainX *= ada_weight * n_sample
         A_tmp = np.concatenate([trainX,A_,np.ones((n_sample,1))],axis=1)
-        A_tmp *= A_tmp
+        A_tmp *= ada_weights
         beta_=l2_weights(A_tmp,trainY,C,n_sample)
 
         A.append(A_tmp)
@@ -72,20 +72,18 @@ def MRVFLtrain(trainX,trainY,option):
         trainY_temp=np.matmul(A_tmp,beta_)
         prob = np.expand_dims(softmax(trainY_temp), axis=1)
         pred_num = np.argmax(prob,axis=2).ravel()
-        pred_oh = np.zeros((pred_num.size,n_classes))
-        mask = np.array(pred_num!=trainY_num)[:,np.newaxis]
-        err =np.sum(ada_weight*mask) / np.sum(ada_weight)
-        classifier_weight = np.log((1-err)/err)+np.log(n_classes-1)
-        classifier_weights[i] = classifier_weight
-        ada_weight*=np.exp(classifier_weight*mask)
-        ada_weight/=ada_weight.sum()
-        ada_weights[i] = ada_weight.ravel()
-        if err > (n_classes - 1 / n_classes):
-            classifier_weight = 0
-            ada_weight = np.expand_dims(np.ones(len(trainX))/len(trainX),axis=1)
-            print('Error rate of {} Layer is higher than random, drop.'.format(i) )
-        pred_oh[range(n_sample),pred_num] = classifier_weight
-        pred_idx.append(pred_oh)
+
+        h = (n_classes - 1) * (np.log(prob) -
+                               (1. / n_classes) * np.log(prob).sum(axis=1)[:, np.newaxis])
+
+        y_codes = np.array([-1. / (n_classes - 1), 1.])
+        y_coding = y_codes.take(np.unique(trainY) == trainY[:, np.newaxis])
+        estimator_weight = (-1.
+                            * ((n_classes - 1.) / n_classes)
+                            * xlogy(y_coding, prob).sum(axis=2))
+        ada_weight *= np.exp(estimator_weight *((ada_weight > 0) |(estimator_weight < 0)))
+        ada_weight /= ada_weight.sum()
+        samm_prob.append(h)
 
         # trainX *= ada_weight*n_sample
         A_input = np.concatenate([trainX, A_], axis=1)
