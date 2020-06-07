@@ -59,7 +59,7 @@ def MRVFLtrain(trainX,trainY,option):
         A_ = A_ + np.repeat(b, n_sample, 0)
         # A_ = relu(A_)
         A_ = selu(A_)
-        trainX *= ada_weight * n_sample
+        # trainX *= ada_weight * n_sample
         A_tmp = np.concatenate([trainX,A_,np.ones((n_sample,1))],axis=1)
         A_tmp *= A_tmp
         beta_=l2_weights(A_tmp,trainY,C,n_sample)
