@@ -76,7 +76,7 @@ for i in range(n_CV):
         option.N = n
         for j in C_range:
             option.C = j
-            for l in range(1,L):
+            for l in range(4,L):
                 sto = time.time()
                 option.L = l
                 train_idx_val = cp.where(validation[:, i] == 0)[0]

@@ -17,7 +17,6 @@ def MRVFLtrain(trainX,trainY,option):
     L = option.L
     C = option.C
     s = option.scale   #scaling factor
-    pred_idx=np.ones((L,n_sample))
     A=[]
     beta=[]
     weights = []
@@ -26,12 +25,15 @@ def MRVFLtrain(trainX,trainY,option):
     sigma = []
     samm_prob = []
 
+
     A_input= trainX
 
 
     time_start=time.time()
     ada_weights = np.ones((L,n_sample))
+    classifier_weights = np.ones(L)
     ada_weight = np.expand_dims(np.ones(len(trainX))/len(trainX),axis=1)
+    pred_idx = []
 
     for i in range(L):
 
@@ -66,38 +68,43 @@ def MRVFLtrain(trainX,trainY,option):
         #clear A_ A_tmp A1_temp2 beta_
 
         trainY_temp=np.matmul(A_tmp,beta_)
-        n_classes = np.unique(trainY).size
+        n_classes = trainY.shape[1]
         prob = np.expand_dims(softmax(trainY_temp), axis=1)
-        h = (n_classes - 1) * (np.log(prob) - (1. / n_classes) * np.log(prob).sum(axis=1)[:, np.newaxis])
-        #indx=np.argmax(trainY_temp,axis=1)
-        #indx=indx.reshape(n_sample,1)
-        y_codes = np.array([-1. / (n_classes - 1), 1.])
-        y_coding = y_codes.take(np.unique(trainY) == trainY[:, np.newaxis])
-        estimator_weight = (-1.
-                            * ((n_classes - 1.) / n_classes)
-                            * xlogy(y_coding, prob).sum(axis=2))
-        ada_weight *= np.exp(estimator_weight *((ada_weight > 0) |(estimator_weight < 0)))
-        ada_weight /= ada_weight.sum()
-        samm_prob.append(h)
+        pred_num = np.argmax(prob,axis=2).ravel()
+        pred_oh = np.zeros((pred_num.size,n_classes))
+        trainY_num = np.argmax(trainY,axis=1).ravel()
+        mask = np.array(pred_num!=trainY_num)[:,np.newaxis]
+        err =np.sum(ada_weight*mask) / np.sum(ada_weight)
+        classifier_weight = np.log((1-err)/err)+np.log(n_classes-1)
+        classifier_weights[i] = classifier_weight
+        ada_weight*=np.exp(classifier_weight*mask)
+        ada_weight/=ada_weight.sum()
         ada_weights[i] = ada_weight.ravel()
+        if err > (n_classes - 1 / n_classes):
+            classifier_weight = 0
+            ada_weight = np.expand_dims(np.ones(len(trainX))/len(trainX),axis=1)
+            print('Error rate of {} Layer is higher than random, drop.'.format(i) )
+        pred_oh[range(n_sample),pred_num] = classifier_weight
+        pred_idx.append(pred_oh)
 
-        # trainX *= ada_weight*n_sample
+        trainX *= ada_weight*n_sample
         A_input = np.concatenate([trainX, A_], axis=1)
 
 
-    pred = sum(samm_prob) / L
-
+    #pred = sum(samm_prob) / L
+    pred_idx = np.array(pred_idx)
+    pred = np.argmax(pred_idx.sum(axis=0),axis=1)
     time_end = time.time()
     Training_time = time_end-time_start
 
 
     ## Calculate the training accuracy
 
-    TrainingAccuracy = np.sum(np.argmax(pred,axis=2).ravel() == np.argmax(trainY,axis=1).ravel())/n_sample
+    TrainingAccuracy = np.sum(pred== np.argmax(trainY,axis=1).ravel())/n_sample
 
 
 
-    model = mod(L,weights,biases,beta,mu,sigma,ada_weights)
+    model = mod(L,weights,biases,beta,mu,sigma,classifier_weights)
         
     return model,TrainingAccuracy,Training_time
 
