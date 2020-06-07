@@ -74,7 +74,7 @@ def MRVFLtrain(trainX,trainY,option):
                                (1. / n_classes) * np.log(prob).sum(axis=1)[:, np.newaxis])
 
         y_codes = np.array([-1. / (n_classes - 1), 1.])
-        y_coding = y_codes.take(np.unique(trainY) == trainY[:, np.newaxis])
+        y_coding = y_codes.take(np.unique(trainY_num) == trainY_num[:, np.newaxis])
         estimator_weight = (-1.
                             * ((n_classes - 1.) / n_classes)
                             * xlogy(y_coding, prob).sum(axis=1))

@@ -12,7 +12,7 @@ from MRVFL import *
 import time
 
 root_path = '/home/hu/eRVFL/UCIdata'
-data_name = 'led-display'
+data_name = 'statlog-german-credit'
 # n_device = 7
 print('Dataset Name:{}\nDevice Number:#CPU'.format(data_name))
 
