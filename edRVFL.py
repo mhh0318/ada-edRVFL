@@ -12,7 +12,7 @@ from MRVFL import *
 import time
 
 root_path = '/home/hu/eRVFL/UCIdata'
-data_name = 'led-display'
+data_name = 'statlog-german-credit'
 # n_device = 7
 print('Dataset Name:{}\nDevice Number:#CPU'.format(data_name))
 
@@ -76,33 +76,32 @@ for i in range(n_CV):
         option.N = n
         for j in C_range:
             option.C = j
-            for l in range(4,L):
-                sto = time.time()
-                option.L = l
-                train_idx_val = cp.where(validation[:, i] == 0)[0]
-                test_idx_val = cp.where(validation[:, i] == 1)[0]
-                trainX_val = dataX[train_idx_val, :]
-                trainY_val = dataY_tmp[train_idx_val, :]
-                testX_val = dataX[test_idx_val, :]
-                testY_val = dataY_tmp[test_idx_val, :]
-                [model_tmp, train_acc_temp, test_acc_temp, training_time_temp, testing_time_temp] = MRVFL(trainX_val, trainY_val, testX_val, testY_val, option)
-                if test_acc_temp > MAX_acc:
-                    MAX_acc = test_acc_temp
-                    option_best.acc_test = test_acc_temp.max()
-                    option_best.acc_train = train_acc_temp.max()
-                    option_best.C = option.C
-                    option_best.N = option.N
-                    option_best.L = option.L
-                    option_best.nCV = i
-                    print('Temp Best Option:{}'.format(option_best.__dict__))
-                print('Training Time for one option set:{:.2f}'.format(time.time()-sto))
-                if time.time()-sto>10:
-                    print('current settings:{}'.format(option.__dict__))
+            sto = time.time()
+            option.L = 32
+            train_idx_val = cp.where(validation[:, i] == 0)[0]
+            test_idx_val = cp.where(validation[:, i] == 1)[0]
+            trainX_val = dataX[train_idx_val, :]
+            trainY_val = dataY_tmp[train_idx_val, :]
+            testX_val = dataX[test_idx_val, :]
+            testY_val = dataY_tmp[test_idx_val, :]
+            [model_tmp, train_acc_temp, test_acc_temp, training_time_temp, testing_time_temp] = MRVFL(trainX_val, trainY_val, testX_val, testY_val, option)
+            if test_acc_temp.max() > MAX_acc:
+                MAX_acc = test_acc_temp.max()
+                option_best.acc_test = test_acc_temp.max()
+                option_best.acc_train = train_acc_temp.max()
+                option_best.C = option.C
+                option_best.N = option.N
+                option_best.L = option.L
+                option_best.nCV = i
+                print('Temp Best Option:{}'.format(option_best.__dict__))
+            print('Training Time for one option set:{:.2f}'.format(time.time()-sto))
+            if time.time()-sto>10:
+                print('current settings:{}'.format(option.__dict__))
     [model_RVFL, train_acc0, test_acc0, train_time0, test_time0] = MRVFL(trainX, trainY, testX, testY, option_best)
     print('Training Time for one fold set:{:.2f}'.format(time.time() - st))
     Models.append(model_RVFL)
-    train_acc_result[i] =train_acc0
-    test_acc_result[i] =test_acc0
+    train_acc_result[i] =train_acc0.max()
+    test_acc_result[i] =test_acc0.max()
     train_time_result[i] =train_time0
     test_time_result[i] =test_time0
     del model_RVFL

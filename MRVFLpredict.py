@@ -36,23 +36,28 @@ def MRVFLpredict(testX,testY,model):
 
         #clear A1 A1_temp1 A1_temp2 beta1
         A_input = np.concatenate([testX,A1],axis=1)
-
+    n_classes = testY.shape[1]
+    testY_num = np.argmax(testY, axis=1).ravel()
     pred_idx=[]
     for i in range(L):
         A_temp=A[i]
         beta_temp=beta[i]
         clf_weight = clf_weights[i]
         testY_temp=np.matmul(A_temp,beta_temp)
-        n_classes = testY.shape[1]
         prob = np.expand_dims(softmax(testY_temp), axis=1)
         pred_num = np.argmax(prob,axis=2).ravel()
         pred_oh = np.zeros((pred_num.size,n_classes))
         pred_oh[range(Nsample), pred_num] = clf_weight
         pred_idx.append(pred_oh)
 
+
+    pred = np.zeros((L,Nsample,n_classes))
     pred_idx = np.array(pred_idx)
-    pred = np.argmax(pred_idx.sum(axis=0),axis=1)
-    TestingAccuracy = np.sum(pred == np.argmax(testY, axis=1).ravel()) / Nsample
+    for i in range(1,L+1):
+        pred[i-1] = pred_idx[:i].sum(axis=0)
+    predictions = np.argmax(pred,axis=2)
+
+    TestingAccuracy = np.sum(predictions == testY_num, axis=1) / Nsample
 
     time_end=time.time()
 
