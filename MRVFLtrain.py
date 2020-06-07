@@ -23,7 +23,6 @@ def MRVFLtrain(trainX,trainY,option):
     biases = []
     mu = []
     sigma = []
-    samm_prob = []
 
 
     A_input= trainX
