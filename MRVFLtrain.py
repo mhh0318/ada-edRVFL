@@ -69,7 +69,7 @@ def MRVFLtrain(trainX,trainY,option):
         #clear A_ A_tmp A1_temp2 beta_
 
         trainY_temp=np.matmul(A_tmp,beta_)
-        prob = np.expand_dims(softmax(trainY_temp), axis=1)
+        prob = softmax(trainY_temp)
         h = (n_classes - 1) * (np.log(prob) -
                                (1. / n_classes) * np.log(prob).sum(axis=1)[:, np.newaxis])
 
@@ -77,8 +77,8 @@ def MRVFLtrain(trainX,trainY,option):
         y_coding = y_codes.take(np.unique(trainY) == trainY[:, np.newaxis])
         estimator_weight = (-1.
                             * ((n_classes - 1.) / n_classes)
-                            * xlogy(y_coding, prob).sum(axis=2))
-        ada_weight *= np.exp(estimator_weight *((ada_weight > 0) |(estimator_weight < 0)))
+                            * xlogy(y_coding, prob).sum(axis=1))
+        ada_weight *= np.exp(estimator_weight[:,np.newaxis] *((ada_weight > 0) |(estimator_weight[:,np.newaxis] < 0)))
         ada_weight /= ada_weight.sum()
         samm_prob.append(h)
 
