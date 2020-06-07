@@ -1,11 +1,12 @@
-import numpy as np
+import numpy as cp
 
-def l2_weights(A_merge,b,C,Nsample):
+def l2_weights(X, target, ridge_parameter, n_sample):
 
-    if A_merge.shape[1]<Nsample:
-        beta = np.matmul(np.matmul(np.linalg.inv(np.identity(A_merge.shape[1])/C+np.matmul(A_merge.T,A_merge)),A_merge.T),b)
+    if ridge_parameter == 0:
+        beta = cp.matmul(cp.linalg.pinv(X),target)
+    elif X.shape[1]<n_sample:
+        beta = cp.matmul(cp.matmul(cp.linalg.inv(cp.eye(X.shape[1]) / ridge_parameter + cp.matmul(X.T, X)), X.T), target)
     else:
-        beta = np.matmul(A_merge.T,np.matmul(np.linalg.inv(np.identity(A_merge.shape[0])/C+np.matmul(A_merge,A_merge.T)),b))
+        beta = cp.matmul(X.T, cp.matmul(cp.linalg.inv(cp.eye(X.shape[0]) / ridge_parameter + cp.matmul(X, X.T)), target))
 
     return beta
-
