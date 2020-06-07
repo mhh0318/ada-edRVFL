@@ -34,7 +34,6 @@ def MRVFLtrain(trainX,trainY,option):
     ada_weights = np.ones((L,n_sample))
     classifier_weights = np.ones(L)
     ada_weight = np.expand_dims(np.ones(len(trainX))/len(trainX),axis=1)
-    pred_idx = []
 
     for i in range(L):
 
@@ -61,7 +60,7 @@ def MRVFLtrain(trainX,trainY,option):
         A_ = selu(A_)
         # trainX *= ada_weight * n_sample
         A_tmp = np.concatenate([trainX,A_,np.ones((n_sample,1))],axis=1)
-        A_tmp *= ada_weights
+        A_tmp *= ada_weight
         beta_=l2_weights(A_tmp,trainY,C,n_sample)
 
         A.append(A_tmp)
@@ -71,8 +70,6 @@ def MRVFLtrain(trainX,trainY,option):
 
         trainY_temp=np.matmul(A_tmp,beta_)
         prob = np.expand_dims(softmax(trainY_temp), axis=1)
-        pred_num = np.argmax(prob,axis=2).ravel()
-
         h = (n_classes - 1) * (np.log(prob) -
                                (1. / n_classes) * np.log(prob).sum(axis=1)[:, np.newaxis])
 
@@ -91,9 +88,9 @@ def MRVFLtrain(trainX,trainY,option):
 
     #pred = sum(samm_prob) / L
     pred = np.zeros((L,n_sample,n_classes))
-    pred_idx = np.array(pred_idx)
+    real_prob = np.array(samm_prob).squeeze()
     for i in range(1,L+1):
-        pred[i-1] = pred_idx[:i].sum(axis=0)
+        pred[i-1] = real_prob[:i].sum(axis=0)
     predictions = np.argmax(pred,axis=2)
     time_end = time.time()
     Training_time = time_end-time_start
