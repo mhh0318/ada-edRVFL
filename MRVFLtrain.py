@@ -1,11 +1,9 @@
 import numpy as np
 import time
-import numpy.matlib
 from function import *
 from l2_weights import *
 from majorityVoting import *
 from model import model as mod
-from scipy.special import xlogy
 
 
 def MRVFLtrain(trainX,trainY,option):
